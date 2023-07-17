@@ -6,7 +6,7 @@ This repo contains the code to perform the annotation of virulence factors (VFs)
 # Methodology
 ## Reference data
 
-In this repo, two public databases are used to respectively annotate virulence factors ([VFDB](http://www.mgc.ac.cn/VFs/main.htm)) and antimicrobial resistance elements ([CARD]https://card.mcmaster.ca/(https://card.mcmaster.ca/)). While reference data from these databases is publically available for download, CARD only allows its use for academic purposes, which is why they are not included in this repository. To be able to run the code in the scripts above, please download the following files from the latest releases of CARD and VFDB:
+In this repo, two public databases are used to respectively annotate virulence factors ([VFDB](http://www.mgc.ac.cn/VFs/main.htm)) and antimicrobial resistance elements ([CARD](https://card.mcmaster.ca/)). While reference data from these databases is publically available for download, CARD only allows its use for academic purposes, which is why they are not included in this repository. To be able to run the code in the scripts above, please download the following files from the latest releases of CARD and VFDB:
 - "aro_categories_index.tsv" (from CARD; accessed 28/03/2023)
 - "protein_fasta_protein_homolog_model.fasta" (from CARD; accessed 28/03/2023)
 - "VFDB_setA_pro.fas" (from VFDB; accessed 28/03/2023)
