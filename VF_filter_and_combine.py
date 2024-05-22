@@ -27,6 +27,8 @@ for root, dirs, files in os.walk(dir):
 print("Retrieving BLAST hits...")
 print(f"E-value threshold set at {EVALUE_THRESH_VF}.")
 vf_overview = {}
+vf_hit_coverage = {}
+vf_hit_identity = {}
 sample_ids = []
 for idx, file in enumerate(tqdm(list_of_hits)):
     # read in sample-specific file
@@ -35,9 +37,9 @@ for idx, file in enumerate(tqdm(list_of_hits)):
     vf_hits = pd.read_csv(
         file, 
         delimiter="\t", 
-        usecols=[0, 1, 10], 
+        usecols=[0, 1, 2, 4, 6], 
         header=None, 
-        names=["read", "VFG", "eval"]
+        names=["read", "VF", "identity", "eval", "coverage"]
     )
 
     # keep only the lowest e-value hit per read
@@ -45,9 +47,11 @@ for idx, file in enumerate(tqdm(list_of_hits)):
     vf_hits.drop(columns=["read"], inplace=True)
 
     # filter out e-values above the threshold
-    vir_fax = list(vf_hits.VFG)
+    vir_fax = list(vf_hits.VF)
     hit_evals = vf_hits['eval'].to_numpy()
-    for name, e in zip(vir_fax, hit_evals):
+    hit_pid = vf_hits['identity'].to_numpy()
+    hit_cov = vf_hits['coverage'].to_numpy()
+    for name, e, pid, cov in zip(vir_fax, hit_evals, hit_pid, hit_cov):
         vf_id = vfg_to_vfid[name.split('(')[0]]
         if e < EVALUE_THRESH_VF:
             if vf_id in vf_overview.keys():
@@ -55,6 +59,8 @@ for idx, file in enumerate(tqdm(list_of_hits)):
             else:
                 vf_overview[vf_id] = np.zeros(len(list_of_hits))
                 vf_overview[vf_id][idx] = 1
+            vf_hit_identity[sample_ids[idx]] = [vf_id, pid]
+            vf_hit_coverage[sample_ids[idx]] = [vf_id, cov]
 
 
 
@@ -65,6 +71,11 @@ vf_overview_df.to_csv(export_name)
 print(f"Wrote out overview to {export_name}!")
 vf_overview_rel_df = vf_overview_df / vf_overview_df.sum(0)
 vf_overview_rel_df.to_csv("./virulence_factors/virulence_factors_relative_overview.csv")
+
+vf_pid_df = pd.DataFrame.from_dict(vf_hit_identity, orient='index', columns=["gene", "identity"])
+vf_pid_df.identity.describe()
+vf_cov_df = pd.DataFrame.from_dict(vf_hit_coverage, orient='index', columns=["gene", "coverage"])
+vf_cov_df.coverage.describe()
 
 print("Retrieving group names and mapping...")
 vfs_found_ordered = list(vf_overview_df.index)

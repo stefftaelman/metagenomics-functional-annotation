@@ -26,6 +26,8 @@ for root, dirs, files in os.walk(dir):
 print("Retrieving BLAST hits...")
 print(f"E-value threshold set at {EVALUE_THRESH_AMR}.")
 amr_overview = {}
+amr_hit_coverage = {}
+amr_hit_identity = {}
 sample_ids = []
 for idx, file in enumerate(tqdm(list_of_hits)):
     # read in sample-specific file
@@ -34,9 +36,9 @@ for idx, file in enumerate(tqdm(list_of_hits)):
     amr_hits = pd.read_csv(
         file, 
         delimiter="\t", 
-        usecols=[0, 1, 10], 
+        usecols=[0, 1, 2, 4, 6], 
         header=None, 
-        names=["read", "AMR", "eval"]
+        names=["read", "AMR", "identity", "eval", "coverage"]
     )
 
     # keep only the lowest e-value hit per read
@@ -47,16 +49,20 @@ for idx, file in enumerate(tqdm(list_of_hits)):
     # filter out e-values above the threshold
     amr_names = list(amr_hits.AMR)
     hit_evals = amr_hits['eval'].to_numpy()
-    for name, e in zip(amr_names, hit_evals):
+    hit_pid = amr_hits['identity'].to_numpy()
+    hit_cov = amr_hits['coverage'].to_numpy()
+    for name, e, pid, cov in zip(amr_names, hit_evals, hit_pid, hit_cov):
         if name.split('|')[1] in missing_amr_names:
             found_missing.append(name)
         amr_gene = acc_to_gene[name.split('|')[1]]
         if e < EVALUE_THRESH_AMR:
             if amr_gene in amr_overview.keys():
-                amr_overview[amr_gene][idx] += 1
+                amr_overview[amr_gene][idx] = 1
             else:
                 amr_overview[amr_gene] = np.zeros(len(list_of_hits))
                 amr_overview[amr_gene][idx] = 1
+            amr_hit_identity[sample_ids[idx]] = [amr_gene, pid]
+            amr_hit_coverage[sample_ids[idx]] = [amr_gene, cov]
 
 
 
@@ -67,6 +73,12 @@ amr_overview_df.to_csv(export_name)
 print(f"Wrote out overview to {export_name}!")
 amr_overview_rel_df = amr_overview_df / amr_overview_df.sum(0)
 amr_overview_rel_df.to_csv("./AMR_genes/AMR_elements_relative_overview.csv")
+
+
+amr_pid_df = pd.DataFrame.from_dict(amr_hit_identity, orient='index', columns=["gene", "identity"])
+amr_pid_df.identity.describe()
+amr_cov_df = pd.DataFrame.from_dict(amr_hit_coverage, orient='index', columns=["gene", "coverage"])
+amr_cov_df.coverage.describe()
 
 print("Retrieving group names and mapping...")
 amrs_found_ordered = list(amr_overview_df.index)
